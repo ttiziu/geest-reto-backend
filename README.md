@@ -4,7 +4,9 @@ API REST para gestión de tareas con asignación multi-usuario, archivado autom�
 
 **Stack:** NestJS + TypeScript + Prisma + PostgreSQL (Railway)
 
-**Diagrama ER:** [`docs/er-diagram.png`](docs/er-diagram.png)
+### Diagrama ER
+
+![Diagrama ER de la base de datos](docs/er-diagram.png)
 
 ---
 

@@ -1,0 +1,85 @@
+// Schema del reto Geest — gestión de tareas con asignación y archivado.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  open
+  archived
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  lastName  String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments TaskAssignment[]
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(open)
+  archivedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  assignments          TaskAssignment[]
+  notificationAttempts NotificationAttempt[]
+}
+
+/// Relación N:M entre Task y User. Cada usuario marca su parte como completada.
+model TaskAssignment {
+  id          Int       @id @default(autoincrement())
+  taskId      Int
+  userId      Int
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@index([taskId])
+}
+
+/// Intentos de POST a NOTIFY_URL cuando la tarea se archiva.
+model NotificationAttempt {
+  id            Int      @id @default(autoincrement())
+  taskId        Int
+  attemptNumber Int
+  timestamp     DateTime @default(now())
+  httpStatus    Int?
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+/// Almacena respuestas de POSTs con header Idempotency-Key.
+model IdempotencyKey {
+  id             Int      @id @default(autoincrement())
+  key            String
+  method         String
+  path           String
+  requestHash    String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+
+  @@unique([key, method, path])
+  @@index([createdAt])
+}

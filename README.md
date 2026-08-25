@@ -128,11 +128,9 @@ Por qué esta mejora (y no Swagger/paginación): refuerza la sección de **confi
 
 ## API en producción
 
-> Actualizar al desplegar.
-
-- **URL:** _(pendiente — Railway)_  
-- **Proveedor:** Railway (API + PostgreSQL)  
-- **Motivo:** deploy simple, Postgres gestionado, adecuado para ventana de 7 días  
-- **Health:** `GET /tasks` o crear un user de prueba  
+- **URL:** https://geest-reto-backend-production.up.railway.app
+- **Proveedor:** Railway (API + PostgreSQL)
+- **Motivo:** deploy simple, Postgres gestionado, adecuado para ventana de 7 días
+- **Ejemplo:** `GET https://geest-reto-backend-production.up.railway.app/tasks`
 
 Migraciones en deploy: `npx prisma migrate deploy` antes de `node dist/main`.

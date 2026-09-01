@@ -243,4 +243,57 @@ describe('Geest API (e2e)', () => {
       expect(res.body.error.code).toBe('IDEMPOTENCY_KEY_REUSE');
     });
   });
+
+  describe('Concurrency', () => {
+    it('archives when two users complete in parallel', async () => {
+      const userA = await request(app.getHttpServer())
+        .post('/users')
+        .send({
+          name: 'Race',
+          lastName: 'A',
+          email: `race-a-${suffix}@test.com`,
+        })
+        .expect(201);
+
+      const userB = await request(app.getHttpServer())
+        .post('/users')
+        .send({
+          name: 'Race',
+          lastName: 'B',
+          email: `race-b-${suffix}@test.com`,
+        })
+        .expect(201);
+
+      const task = await request(app.getHttpServer())
+        .post('/tasks')
+        .send({ title: `race-${suffix}` })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/tasks/${task.body.id}/assign`)
+        .send({ userIds: [userA.body.id, userB.body.id] })
+        .expect(201);
+
+      const [completeA, completeB] = await Promise.all([
+        request(app.getHttpServer())
+          .post(`/tasks/${task.body.id}/complete`)
+          .send({ userId: userA.body.id }),
+        request(app.getHttpServer())
+          .post(`/tasks/${task.body.id}/complete`)
+          .send({ userId: userB.body.id }),
+      ]);
+
+      expect(completeA.status).toBe(201);
+      expect(completeB.status).toBe(201);
+
+      const taskAfter = await request(app.getHttpServer())
+        .get(`/tasks/${task.body.id}`)
+        .expect(200);
+
+      expect(taskAfter.body.status).toBe('archived');
+      expect(
+        taskAfter.body.users.every((u: { completed: boolean }) => u.completed),
+      ).toBe(true);
+    });
+  });
 });

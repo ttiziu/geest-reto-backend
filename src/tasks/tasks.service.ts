@@ -116,6 +116,18 @@ export class TasksService {
 
   async complete(idTask: number, dto: CompleteTaskDto) {
     const result = await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: number }>>`
+        SELECT id FROM "Task" WHERE id = ${idTask} FOR UPDATE
+      `;
+
+      if (locked.length === 0) {
+        throw new AppException(
+          'TASK_NOT_FOUND',
+          `Task with id ${idTask} was not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
       const task = await tx.task.findUnique({
         where: { id: idTask },
         include: { assignments: true },

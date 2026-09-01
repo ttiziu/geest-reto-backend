@@ -24,7 +24,10 @@ export class HttpErrorFilter implements ExceptionFilter {
       status = exception.getStatus();
       const body = exception.getResponse();
 
-      if (typeof body === 'string') {
+      if (status === HttpStatus.TOO_MANY_REQUESTS) {
+        code = 'RATE_LIMIT_EXCEEDED';
+        message = 'Too many requests, please try again later';
+      } else if (typeof body === 'string') {
         message = body;
         code = HttpStatus[status] ?? 'HTTP_ERROR';
       } else if (typeof body === 'object' && body !== null) {
